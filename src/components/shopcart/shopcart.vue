@@ -12,14 +12,14 @@
 				<div class="desc">另需配送费￥{{deliveryPrice}}元</div>
 			</div>
 			<div class="content-right">
-				<div class="pay" :class="payClass">{{payDesc}}</div>
+				<div class="pay" :class="payClass" @click.stop="Pay">{{payDesc}}</div>
 			</div>
 			<div class="shopcart-list" v-show="listShow" transition="fold">
 				<div class="list-header">
 					<h1 class="title">购物车</h1>
-					<span class="empty">清空</span>
+					<span class="empty" @click="empty">清空</span>
 				</div>
-				<div class="list-content">
+				<div class="list-content" v-el:list-content>
 					<ul>
 						<li class="food" v-for="food in selectFoods">
 							<span class="name">{{food.name}}</span>
@@ -35,8 +35,10 @@
 			</div>
 		</div>
 	</div>
+	<div class="list-mask" @click="hideList" v-show="listShow" transition="fade"></div>
 </template>
 <script>
+	import BScroll from 'better-scroll'
 	import cartcontral from 'components/cartcontral/cartcontral'
 
 	export default {
@@ -65,10 +67,21 @@
 			listShow() {
 				if (!this.totalCount) {
 					this.fold = true
-					return false
+					return
 				}
 				let show = !this.fold
+				if (show) {
+					this.$nextTick(() => {
+						if (!this.scroll) {
+							this.scroll = new BScroll(this.$els.listContent, {
+							click: true
+						})
+					} else {
+						this.scroll.refresh()
+					}
+				})
 				return show
+				}
 			},
 			totalPrice() {
 				let total = 0
@@ -111,6 +124,20 @@
 					return
 				}
 				this.fold = !this.fold
+			},
+			empty() {
+				this.selectFoods.forEach((food) => {
+					food.count = 0
+				})
+			},
+			hideList() {
+				this.fold = true
+			},
+			Pay() {
+				if (this.totalPrice < this.minPrice) {
+					return
+				}
+				window.alert(`支付${this.totalPrice}元`)
 			}
 		}
 	}
@@ -232,4 +259,41 @@
 			.list-content
 				padding:0 18px
 				max-height:217px
+				overflow:hidden
+				background:#fff
+				.food
+					position:relative
+					padding:12px 0
+					box-sizing:border-box
+					.name
+						line-height:24px
+						font-size:14px
+						color:rgb(7,17,27)
+					.price
+						position:absolute
+						right:90px
+						bottom:12px
+						line-height:24px
+						font-size:14px
+						font-weight:700
+						color:rgb(240,20,20)
+					.cartcontral-wrapper
+						position:absolute
+						right:0px
+						bottom:6px
+	.list-mask
+		position:fixed
+		top:0
+		left:0
+		width:100%
+		height:100%
+		z-index:40
+		-webkit-filter:blur(10px)
+		&.fade-transition
+			transition:all 0.5s
+			opacity:1
+			background:rgba(7,17,27,.6)
+		&.fade-enter,&.fade-leave
+			opacity:0
+			background:rgba(7,17,27,0)
 </style>
